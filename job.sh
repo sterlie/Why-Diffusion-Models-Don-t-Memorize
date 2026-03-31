@@ -13,13 +13,14 @@
 #BSUB -e Error_%J.err
 
 ### ===== JOB COMMANDS =====
-
+module purge
+module load dcc-setup/2023-aug
 # Enable debugging (prints commands and stops on errors)
 set -x
 set -e
 
 # Keep cluster module stack; only ensure Python is loaded.
-module load python/3.10.0 || module load python/default
+module load python/3.10.13 || module load python/default
 
 # LS_SUBCWD is set by LSF to the directory where bsub was run.
 cd "$LS_SUBCWD" || exit 1
@@ -32,11 +33,12 @@ fi
 # Activate virtual environment
 source .venv/bin/activate
 
-cd "$LS_SUBCWD/Experiments/src/Training"
+cd "$LS_SUBCWD/Experiments"
 # Upgrade pip and install dependencies (no cache to save space)
 python -m pip install --upgrade pip --no-cache-dir
 python -m pip install --no-cache-dir -r requirements.txt
 
+ cd src/Training
 # Clear CUDA cache
 python -c "import torch; torch.cuda.empty_cache()"
 
