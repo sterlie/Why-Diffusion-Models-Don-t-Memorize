@@ -19,28 +19,15 @@ module load dcc-setup/2023-aug
 set -x
 set -e
 
-# Keep cluster module stack; only ensure Python is loaded.
-module load python/3.10.13 || module load python/default
-
-# LS_SUBCWD is set by LSF to the directory where bsub was run.
 cd "$LS_SUBCWD" || exit 1
 
-# Create virtual environment if it doesn't exist
-if [ ! -d ".venv" ]; then
-    python3 -m venv .venv
-fi
+# Activate prebuilt environment
+source ~/gpaw_env/bin/activate
 
-# Activate virtual environment
-source .venv/bin/activate
+cd Experiments/src/Training
 
-cd "$LS_SUBCWD/Experiments"
-# Upgrade pip and install dependencies (no cache to save space)
-python -m pip install --upgrade pip --no-cache-dir
-python -m pip install --no-cache-dir -r requirements.txt
+# Optional (only matters if GPU is used)
+python -c "import torch; print(torch.cuda.is_available())"
 
-cd src/Training
-# Clear CUDA cache
-python -c "import torch; torch.cuda.empty_cache()"
-
-python run_GMM.py -n 4096 -d 8 -s 1 -de 128 -O Adam -B 512 -t -1
-
+# Run with safer memory settings
+python run_GMM.py -n 2048 -d 8 -s 1 -de 128 -O Adam -B 128 -t -1
