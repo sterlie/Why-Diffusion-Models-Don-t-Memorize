@@ -18,16 +18,17 @@
 set -x
 set -e
 
-module unload dcc-setup
+# Clear all inherited modules (incl. gpaw_env) then load Python.
+module purge
 module load python3/3.10.13
 
 # Change to project directory
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir" || exit 1
 
-# Activate an existing conda environment in a non-interactive shell.
-cd "$script_dir/Experiments"
-conda env create -f environment_cpu.yml
+# Create conda environment if it doesn't exist, then activate it.
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda env create -f "$script_dir/Experiments/environment_cpu.yml" || true
 conda activate memorization
 
 cd "$script_dir/Experiments/src/Training"
