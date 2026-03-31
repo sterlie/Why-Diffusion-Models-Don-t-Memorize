@@ -26,7 +26,8 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir" || exit 1
 
 # Activate an existing conda environment in a non-interactive shell.
-eval "$(conda shell.bash hook)"
+cd "$script_dir/Experiments"
+conda env create -f environment.yml
 conda activate memorization
 
 cd "$script_dir/Experiments/src/Training"
