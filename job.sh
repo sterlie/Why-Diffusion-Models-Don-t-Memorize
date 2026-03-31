@@ -38,7 +38,7 @@ cd "$LS_SUBCWD/Experiments"
 python -m pip install --upgrade pip --no-cache-dir
 python -m pip install --no-cache-dir -r requirements.txt
 
- cd src/Training
+cd src/Training
 # Clear CUDA cache
 python -c "import torch; torch.cuda.empty_cache()"
 
