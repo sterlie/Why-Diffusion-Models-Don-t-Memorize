@@ -18,15 +18,15 @@
 set -x
 set -e
 
+# Load Python/conda module on the cluster.
+module load python/3.11.7
 
 # Change to project directory
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir" || exit 1
 
-# Initialize conda for a non-interactive LSF job shell.
-
-conda env create -f "$script_dir/Experiments/environment_cpu.yml"
-
+# Activate an existing conda environment in a non-interactive shell.
+eval "$(conda shell.bash hook)"
 conda activate memorization
 
 cd "$script_dir/Experiments/src/Training"
