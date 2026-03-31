@@ -19,7 +19,7 @@ set -x
 set -e
 
 # Clear all inherited modules then load Python.
-
+module unload dcc-setup
 module load python/3.11.7
 
 # LS_SUBCWD is set by LSF to the directory where bsub was run.
