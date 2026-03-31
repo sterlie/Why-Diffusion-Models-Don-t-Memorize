@@ -24,12 +24,20 @@ module load python/3.11.7 || module load python/default
 # LS_SUBCWD is set by LSF to the directory where bsub was run.
 cd "$LS_SUBCWD" || exit 1
 
-# Initialize conda for this non-interactive shell.
-if [ -f /zhome/projects/k10240/gpaw_env/etc/profile.d/conda.sh ]; then
-	source /zhome/projects/k10240/gpaw_env/etc/profile.d/conda.sh
+# Create virtual environment if it doesn't exist
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
 fi
-conda env create -f Experiments/environment_cpu.yml || true
-conda activate memorization
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Upgrade pip and install dependencies (no cache to save space)
+python -m pip install --upgrade pip --no-cache-dir
+python -m pip install --no-cache-dir -r requirements.txt
+
+# Clear CUDA cache
+python -c "import torch; torch.cuda.empty_cache()"
 
 cd "$LS_SUBCWD/Experiments/src/Training"
 python run_GMM.py -n 4096 -d 8 -s 1 -de 128 -O Adam -B 512 -t -1
