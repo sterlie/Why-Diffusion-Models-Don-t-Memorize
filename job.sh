@@ -18,6 +18,7 @@
 set -x
 set -e
 
+module unload dcc-setup
 # Load Python/conda module on the cluster.
 module load python/3.11.7
 
