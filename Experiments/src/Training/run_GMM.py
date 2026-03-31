@@ -37,7 +37,8 @@ d = args['dim']
 seed = args['seed']
 n_base = args['d_embed']
 optim = args['optim']
-device = 'cuda:0'
+#device = 'cuda:0' # changed this from hardcoded cuda, so it can run on cpu 
+device = 'cuda:0' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
 batch_size = args['bs']
 time_step = args['time']
 if time_step == -1:
