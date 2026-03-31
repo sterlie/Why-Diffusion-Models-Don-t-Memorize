@@ -18,14 +18,16 @@
 set -x
 set -e
 
-# Clear all inherited modules then load Python.
-module unload dcc-setup
-module load python/3.11.7
+# Keep cluster module stack; only ensure Python is loaded.
+module load python/3.11.7 || module load python/default
 
 # LS_SUBCWD is set by LSF to the directory where bsub was run.
 cd "$LS_SUBCWD" || exit 1
 
-# Init conda from its known base path, create env if needed, then activate.
+# Initialize conda for this non-interactive shell.
+if [ -f /zhome/projects/k10240/gpaw_env/etc/profile.d/conda.sh ]; then
+	source /zhome/projects/k10240/gpaw_env/etc/profile.d/conda.sh
+fi
 conda env create -f Experiments/environment_cpu.yml || true
 conda activate memorization
 
