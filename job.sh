@@ -19,8 +19,8 @@ set -x
 set -e
 
 # Clear all inherited modules (incl. gpaw_env) then load Python.
-module purge
-module load python/3.11.7
+
+module load python/3.10
 
 # Change to project directory
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
