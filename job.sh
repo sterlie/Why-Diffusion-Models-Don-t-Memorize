@@ -9,28 +9,45 @@
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o logs/Output_%J.out
-#BSUB -e logs/Error_%J.err
+#BSUB -o Output_%J.out
+#BSUB -e Error_%J.err
 
 ### ===== JOB COMMANDS =====
 
 # Enable debugging (prints commands and stops on errors)
 set -x
-set -e
+set -euo pipefail
 
 # Load Python module available on DTU HPC
 module load python/3.11.7
 
 # Change to project directory
-cd /zhome/61/d/156689/adlcv|| exit 1
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir" || exit 1
 
-# Create logs directory if it does not exist
-mkdir -p logs
+# Initialize conda for a non-interactive LSF job shell.
+if command -v conda >/dev/null 2>&1; then
+	eval "$(conda shell.bash hook)"
+else
+	for conda_root in "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/miniforge3" "$HOME/mambaforge"; do
+		if [ -f "$conda_root/etc/profile.d/conda.sh" ]; then
+			. "$conda_root/etc/profile.d/conda.sh"
+			break
+		fi
+	done
+fi
 
-conda env create -f environment_cpu.yml
+if ! command -v conda >/dev/null 2>&1; then
+	echo "conda was not found in the batch environment"
+	exit 127
+fi
+
+if ! conda run -n memorization python -c "import sys" >/dev/null 2>&1; then
+	conda env create -f "$script_dir/Experiments/environment_cpu.yml"
+fi
+
 conda activate memorization
-pip install natsort
 
-cd Experiments/src/Training
+cd "$script_dir/Experiments/src/Training"
 python run_GMM.py -n 4096 -d 8 -s 1 -de 128 -O Adam -B 512 -t -1
 
