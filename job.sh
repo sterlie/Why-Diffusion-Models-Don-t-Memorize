@@ -19,8 +19,7 @@ set -x
 set -e
 
 module unload dcc-setup
-# Load Python/conda module on the cluster.
-module load python/3.11.7
+module load python3/3.10.13
 
 # Change to project directory
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
