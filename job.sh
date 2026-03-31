@@ -16,10 +16,8 @@
 
 # Enable debugging (prints commands and stops on errors)
 set -x
-set -euo pipefail
+set -e
 
-# Load Python module available on DTU HPC
-module load python/3.11.7
 
 # Change to project directory
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
