@@ -18,19 +18,17 @@
 set -x
 set -e
 
-# Clear all inherited modules (incl. gpaw_env) then load Python.
+# Clear all inherited modules then load Python.
 
 module load python/3.11.7
 
-# Change to project directory
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-cd "$script_dir" || exit 1
+# LS_SUBCWD is set by LSF to the directory where bsub was run.
+cd "$LS_SUBCWD" || exit 1
 
-# Create conda environment if it doesn't exist, then activate it.
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda env create -f "$script_dir/Experiments/environment_cpu.yml" || true
+# Init conda from its known base path, create env if needed, then activate.
+conda env create -f Experiments/environment_cpu.yml || true
 conda activate memorization
 
-cd "$script_dir/Experiments/src/Training"
+cd "$LS_SUBCWD/Experiments/src/Training"
 python run_GMM.py -n 4096 -d 8 -s 1 -de 128 -O Adam -B 512 -t -1
 
