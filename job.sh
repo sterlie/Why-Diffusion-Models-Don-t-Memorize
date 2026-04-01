@@ -3,8 +3,8 @@
 #BSUB -J memorization
 #BSUB -n 1
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=1GB]"
-#BSUB -M 9GB
+#BSUB -R "rusage[mem=2GB]"
+#BSUB -M 3GB
 #BSUB -W 24:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
