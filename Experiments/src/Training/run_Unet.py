@@ -18,6 +18,15 @@ from numpy.random import default_rng
 
 #%% 
 
+
+def pick_available_device(requested_device='cuda:0'):
+    req = str(requested_device).lower()
+    if req.startswith('cuda'):
+        return req if torch.cuda.is_available() else 'cpu'
+    if req == 'mps':
+        return 'mps' if torch.backends.mps.is_available() else 'cpu'
+    return 'cpu' if req == 'cpu' else req
+
 parser = argparse.ArgumentParser("Diffusion on CelebA dataset with U-net.")
 parser.add_argument("-n", "--num", help="Number of training data", type=int)
 parser.add_argument("-i", "--index", help="Index for the dataset (0 or 1)", type=int)
@@ -26,6 +35,7 @@ parser.add_argument("-LR", "--learning_rate", help="Learning rate for optimizati
 parser.add_argument("-O", "--optim", help="Optimisation type (SGD_Momentum or Adam)", type=str)
 parser.add_argument("-W", "--nbase", help="Number of base filters", type=str)
 parser.add_argument("-t", "--time", help="Diffusion timestep", type=int)
+parser.add_argument("--device", help="Device to use (cpu, mps, cuda:0)", type=str, default='cuda:0')
 args = vars(parser.parse_args())
 print(args)
 
@@ -37,6 +47,7 @@ lr = args['learning_rate']
 optim = args['optim']
 n_base = int(args['nbase'])
 time_step = args['time']
+device = args['device']
 if time_step == -1:
     mode = 'normal'
 else:
@@ -52,6 +63,8 @@ config.OPTIM = optim
 config.LR = lr
 config.mode = mode
 config.time_step = time_step
+config.DEVICE = pick_available_device(device)
+print('Using device:', config.DEVICE)
 
 if config.mode == 'normal':
     suffix = '{:s}{:d}_{:d}_{:d}_{:s}_{:d}_{:.4f}_index{:d}/'.format(config.DATASET, size,
@@ -131,8 +144,9 @@ if __name__ == '__main__':
         path_checkpoint = config.path_save + '/{:s}/Models/Model_{:d}'.format(suffix, offset)
         model = loader.load_model(model, path_checkpoint)
         model.to(config.DEVICE)
-            
-    model = nn.DataParallel(model, device_ids = [0, 1])
+
+    if config.DEVICE.startswith('cuda') and torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
     model.to(config.DEVICE)
 
 if __name__ == '__main__':
