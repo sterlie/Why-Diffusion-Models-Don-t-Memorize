@@ -12,7 +12,7 @@ def load_config(DATASET):
         config.path_save = '../../Saves/'          # Path to save results from Experiments/src/FOLDER/
         config.IMG_SHAPE = (1, 32, 32)
         config.BATCH_SIZE = 512
-        config.path_data = '../../Data/CelebA/'    # Path to CelebA dataset from Experiments/src/FOLDER/
+        config.path_data = '../../Data/'    # Path to CelebA dataset from Experiments/src/FOLDER/
         config.CENTER = True
         config.STANDARDIZE = False
         config.n_images = 1024
