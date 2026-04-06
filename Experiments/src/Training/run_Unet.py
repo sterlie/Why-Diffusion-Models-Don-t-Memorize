@@ -48,6 +48,7 @@ optim = args['optim']
 n_base = int(args['nbase'])
 time_step = args['time']
 device = args['device']
+device = 'cuda:0' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
 if time_step == -1:
     mode = 'normal'
 else:
