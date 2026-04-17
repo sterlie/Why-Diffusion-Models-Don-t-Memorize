@@ -209,3 +209,9 @@ Main packages included:
 - Pillow >= 9.0.0
 - natsort
 - pytorch-fid >= 0.3.0
+
+
+RUN condotional on MILK10 data 
+
+
+python run_Unet_guided.py --num 128 --batch_size 16 --label_col skin_tone_class --metadata_csv ../../Data/milk10/MILK10k_Training_Metadata.csv --image_pth ../../Data/milk10/MILK10k_Training_Input.pth --img_size 32 --learning_rate 0.0001 --optim Adam --nbase 128

@@ -12,7 +12,7 @@ def load_config(DATASET):
         config.path_save = '../../Saves/'          # Path to save results from Experiments/src/FOLDER/
         config.IMG_SHAPE = (1, 32, 32)
         config.BATCH_SIZE = 512
-        config.path_data = '../../Data/'    # Path to CelebA dataset from Experiments/src/FOLDER/
+        config.path_data = '../../Data/CelebA/CelebA32.pt'  # Path to CelebA .pt file
         config.CENTER = True
         config.STANDARDIZE = False
         config.n_images = 1024
@@ -25,7 +25,23 @@ def load_config(DATASET):
         config.time_step = -1
         config.DEVICE = 'cuda:0'
         config.TIMESTEPS = 1000
-        
+    elif DATASET == "MILK10":
+        config.path_save = '../../Saves/'          # Path to save results from Experiments/src/FOLDER/
+        config.IMG_SHAPE = (3, 32, 32)
+        config.BATCH_SIZE = 512
+        config.path_data = '../../Data/milk10/MILK10.pth'    # Path to CelebA dataset from Experiments/src/FOLDER/
+        config.CENTER = True
+        config.STANDARDIZE = False
+        config.n_images = 1024
+        #config.BATCH_SIZE = min(512, config.n_images)
+        config.N_STEPS = int(2e6)
+        config.LOSS_SCORE_EMP = False
+        config.OPTIM = 'SGD_Momentum'
+        config.LR = 1e-2
+        config.mode = 'normal'
+        config.time_step = -1
+        config.DEVICE = 'cuda:0'
+        config.TIMESTEPS = 1000
     else:
         raise Exception('Dataset {:s} not implemented'.format(DATASET))
     return config
@@ -48,7 +64,7 @@ def load_training_data(config, index, loadtest=False):
         
     # Torch Tensor version
     size = config.IMG_SHAPE[1]
-    all_images = torch.load(config.path_data + '{:s}{:d}.pt'.format(config.DATASET, size))
+    all_images = torch.load(config.path_data)
     trainset, testset = loader.load_CelebA_pt(config, all_images, loadtest=loadtest, index=index)
     
     return trainset, testset

@@ -154,11 +154,16 @@ class UNet(nn.Module):
         base_channels_multiples=(1, 2, 4, 8),           # Channels multiple (defines the number of maps)
         apply_attention=(False, True, True, False),     # Attention to maps (must of the same size as base_channels_multiples)
         dropout_rate=0.1,
+        num_classes=None
     ):
         super().__init__()
 
         if len(base_channels_multiples) != len(apply_attention):
             raise Exception('base_channels_multiples and apply_attention must have the same length')
+        
+        # Label projection to time embedding dimension (for one-hot y)
+        if num_classes is not None:
+            self.label_proj = nn.Linear(num_classes, base_channels * 4)
         
         # Time embedding
         time_emb_dims_exp = base_channels * 4       # Size of time embedding is base*4 (Ho et al.)
@@ -243,33 +248,32 @@ class UNet(nn.Module):
         # Final residual block
         self.final_block = Block(in_channels, output_channels, dropout_rate=0.0)
 
-    def forward(self, x, t):
+    def forward(self, x, t, y=None):
         # Put t in 1D vector with int64 elements
         t = t.flatten().to(torch.long)
 
         # Time embedding
         time_emb = self.time_embeddings(t)
 
+        # Add projected label embedding to time embedding (y must be one-hot)
+        if y is not None:
+            label_emb = self.label_proj(y)
+            time_emb = time_emb + label_emb
+
         h = self.init_conv(x)
         outs = [h]
-        
         # Dimension reduction
         for layer in self.encoder_blocks:
             h = layer(h, time_emb)
             outs.append(h)
-        
         # Botleneck
         for layer in self.bottleneck_blocks:
             h = layer(h, time_emb)
-            
         # Decoding part: restoration + skip connections
         for layer in self.decoder_blocks:
             if isinstance(layer, ResnetBlock):
                 out = outs.pop()
                 h = torch.cat([h, out], dim=1)
             h = layer(h, time_emb)
-
         h = self.final_block(h)
-
         return h
-   
