@@ -30,7 +30,6 @@ cd Experiments/src/Training
 python -c "import torch; print(torch.cuda.is_available())"
 
 # Run with safer memory settings
-pyenv shell scewl
 python run_Unet_guided.py \
   -n 1024 \
   -b 64 \
@@ -39,7 +38,7 @@ python run_Unet_guided.py \
   -LR 0.0001 \
   -O Adam \
   -m ../../Data/milk10/MILK10k_Training_Metadata.csv \
-  -p ../../Data/milk10/MILK10.pth \
+  -p ../../Data/milk10/MILK10k_Training_Input.pth \
   -l skin_tone_class \
   --device cpu \
   --generate
