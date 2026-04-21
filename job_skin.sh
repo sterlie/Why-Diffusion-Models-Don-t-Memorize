@@ -24,6 +24,9 @@ cd "$LS_SUBCWD" || exit 1
 # Activate prebuilt environment
 source ~/gpaw_env/bin/activate
 
+# Install missing dependencies
+pip install pandas --quiet
+
 cd Experiments/src/Training
 
 # Optional (only matters if GPU is used)
