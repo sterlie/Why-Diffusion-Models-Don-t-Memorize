@@ -95,7 +95,7 @@ The `generate.py` script allows you to generate samples from trained diffusion m
 Example:
 ```bash
 cd Experiments/src/Generation
-python generate.py -D CelebA -n 1024 -i 0 -s 32 -B 512 -LR 0.0001 -O Adam -W 32 -Ns 100 --device cuda:0
+python generate.py -D CelebA -n 1024 -i 0 -s 32 -B 512 -LR 0.0001 -O Adam -W 32 -Ns 100 --device cpu
 ```
 It will create a folder `Samples` in `Experiments/Saves/CelebA32_1024_32_Adam_512_0.0001_index0` with multiples subfolders corresponding to the several snapshot of trained models.
 To modify these generation times, you can modify `generate.py`, making sure it fits the models saved in `run_Unet.py` as well.

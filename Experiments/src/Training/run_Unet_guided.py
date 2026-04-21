@@ -30,6 +30,7 @@ def pick_available_device(requested_device='cuda:0'):
 
 parser = argparse.ArgumentParser("Diffusion on MILK10 dataset with U-net and CFG.")
 parser.add_argument("-n", "--num", help="Number of training data", type=int, default=128)
+parser.add_argument("-i", "--index", help="Index for the dataset", type=int, default=0)
 parser.add_argument("-b", "--batch_size", help="Batch size", type=int, default=16)
 parser.add_argument("-l", "--label_col", help="Label column for conditioning", type=str, default="skin_tone_class")
 parser.add_argument("-m", "--metadata_csv", help="Path to metadata CSV", type=str, default="../../Data/milk10/MILK10k_Training_Metadata.csv")
@@ -47,21 +48,20 @@ print(args)
 
 # Get arguments
 n = args['num']
-index = args.get('index', 0)
+index = args['index']
 size = args['img_size']
 lr = args['learning_rate']
 optim = args['optim']
 n_base = int(args['nbase'])
 time_step = args['time']
 device = args['device']
-device = 'cuda:0' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
 if time_step == -1:
     mode = 'normal'
 else:
     mode = 'fixed_time'
 
 # Overwrite config with command line arguments
-DATASET = 'CelebA'
+DATASET = 'MILK10'
 config = cfg.load_config(DATASET)
 config.IMG_SHAPE = (3, size, size)
 config.n_images = n
@@ -71,7 +71,6 @@ config.LR = lr
 config.mode = mode
 config.time_step = time_step
 config.DEVICE = pick_available_device(device)
-config.IMG_SHAPE = (3, size, size)
 print('Using device:', config.DEVICE)
 
 if config.mode == 'normal':
@@ -90,7 +89,7 @@ path_models = config.path_save + suffix + 'Models/'
 os.makedirs(path_images, exist_ok=True)
 os.makedirs(path_models, exist_ok=True)
 
-os.system('cp run_Unet.py {:s}'.format(path_models + '_run_Unet.py'))
+os.system('cp run_Unet_guided.py {:s}'.format(path_models + '_run_Unet_guided.py'))
 os.system('cp ../Utils/loader.py {:s}'.format(path_models + '_loader.py'))
 os.system('cp ../Utils/cfg.py {:s}'.format(path_models + '_cfg.py'))
 
@@ -108,20 +107,20 @@ os.system('cp ../Utils/cfg.py {:s}'.format(path_models + '_cfg.py'))
 
 # MILK10 loader version (for classifier-free guidance)
 
-metadata_csv = args.get('metadata_csv', "../../Data/milk10/MILK10k_Training_Metadata.csv")
-image_pth = args.get('image_pth', "../../Data/milk10/MILK10k_Training_Input.pth")
-label_col = args.get('label_col', "skin_tone_class")
-num_samples = args.get('num', 128)
-batch_size = args.get('batch_size', 16)
+metadata_csv = args['metadata_csv']
+image_pth = args['image_pth']
+label_col = args['label_col']
+batch_size = args['batch_size']
 
 dataset = MILK10Dataset(
     metadata_csv=metadata_csv,
     image_pth=image_pth,
-    label_col=label_col
+    label_col=label_col,
+    img_size=size
 )
 # Optionally subsample for small dataset
-if num_samples < len(dataset):
-    indices = np.random.choice(len(dataset), num_samples, replace=False)
+if n < len(dataset):
+    indices = np.random.choice(len(dataset), n, replace=False)
     dataset = torch.utils.data.Subset(dataset, indices)
 
 trainloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -198,6 +197,7 @@ if __name__ == '__main__':
         device                  = config.DEVICE,
     )
     loss_fn = nn.MSELoss()
+    model.train()
     sweeping = 1.0
     times_save = cfg.get_training_times()
 
@@ -219,12 +219,13 @@ if __name__ == '__main__':
             mask = (torch.rand(labels.shape[0], 1, device=labels.device) < cfg_drop_prob).float()
             labels = labels * (1 - mask)
             # Sample random timesteps
-            t = torch.randint(0, df.n_steps, (images.size(0),), device=images.device)
+            t = torch.randint(1, df.n_steps, (images.size(0),), device=images.device)
+            # Apply forward diffusion to get noisy image and target noise
+            x_t, noise = Diffusion.forward_diffusion(df, images, t, config)
+            x_t = x_t.to(config.DEVICE)
             # Forward pass with label conditioning
-            output = model(images, t, y=labels)
-            # Compute loss (MSE to noise, as in Diffusion.train)
-            noise = torch.randn_like(images)
-            loss = loss_fn(output, noise)
+            output = model(x_t.float(), t, y=labels)
+            loss = loss_fn(noise, output)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()

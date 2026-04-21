@@ -256,7 +256,7 @@ class UNet(nn.Module):
         time_emb = self.time_embeddings(t)
 
         # Add projected label embedding to time embedding (y must be one-hot)
-        if y is not None:
+        if y is not None and hasattr(self, 'label_proj'):
             label_emb = self.label_proj(y)
             time_emb = time_emb + label_emb
 

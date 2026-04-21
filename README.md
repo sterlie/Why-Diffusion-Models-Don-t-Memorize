@@ -40,3 +40,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 For questions about the code or paper, please contact T. Bonnaire (tony.bonnaire@ens.fr) and/or R. Urfin (raphael.urfin@ens.fr).
+
+
+## Run Guided Experiment 
+pyenv shell scewl
+python run_Unet_guided.py \
+  -n 1024 \
+  -b 64 \
+  -s 32 \
+  -W 128 \
+  -LR 0.0001 \
+  -O Adam \
+  -m ../../Data/milk10/MILK10k_Training_Metadata.csv \
+  -p ../../Data/milk10/MILK10.pth \
+  -l skin_tone_class \
+  --device mps \
+  --generate

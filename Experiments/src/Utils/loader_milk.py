@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 class MILK10Dataset(Dataset):
-	def __init__(self, metadata_csv, image_dir=None, image_pth=None, label_col='skin_tone_class', transform=None):
+	def __init__(self, metadata_csv, image_dir=None, image_pth=None, label_col='skin_tone_class', img_size=32, transform=None):
 		"""
 		Args:
 			metadata_csv (str): Path to metadata CSV file.
@@ -20,7 +20,7 @@ class MILK10Dataset(Dataset):
 		self.image_pth = image_pth
 		self.label_col = label_col
 		# Compose resize transform to 32x32 with any user-provided transform
-		resize_transform = transforms.Resize((8, 8))
+		resize_transform = transforms.Resize((img_size, img_size))
 		if transform is not None:
 			self.transform = transforms.Compose([resize_transform, transform])
 		else:
