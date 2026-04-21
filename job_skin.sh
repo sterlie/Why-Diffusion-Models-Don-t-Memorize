@@ -20,6 +20,7 @@ set -x
 set -e
 
 cd "$LS_SUBCWD" || exit 1
+DATA_DIR="$LS_SUBCWD/Experiments/Data"
 
 # Activate prebuilt environment
 source ~/gpaw_env/bin/activate
@@ -40,8 +41,8 @@ python run_Unet_guided.py \
   -W 128 \
   -LR 0.0001 \
   -O Adam \
-  -m ../../Data/milk10/MILK10k_Training_Metadata.csv \
-  -p ../../Data/milk10/MILK10k_Training_Input.pth \
+  -m "$DATA_DIR/MILK10k_Training_Metadata.csv" \
+  -p "$DATA_DIR/MILK10k_Training_Input.pth" \
   -l skin_tone_class \
   --device cpu \
   --generate
