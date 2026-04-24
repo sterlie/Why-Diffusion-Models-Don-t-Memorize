@@ -1,16 +1,16 @@
 #!/bin/bash
 #BSUB -q  gpuv100
-#BSUB -J guided_skin 
+#BSUB -J guided_skin_256
 #BSUB -n 4
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=4GB]"
 #BSUB -M 5GB
-#BSUB -W 48:00
+#BSUB -W 24:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o skin_%J.out
-#BSUB -e skin_%J.err
+#BSUB -o skin_256%J.out
+#BSUB -e skin_256%J.err
 
 ### ===== JOB COMMANDS =====
 module purge
