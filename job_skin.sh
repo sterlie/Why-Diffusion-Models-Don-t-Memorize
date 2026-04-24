@@ -1,9 +1,9 @@
 #!/bin/bash
-#BSUB -q hpc
+#BSUB -q  gpuv100
 #BSUB -J guided_skin 
-#BSUB -n 1
+#BSUB -n 4
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=24GB]"
+#BSUB -R "rusage[mem=4GB]"
 #BSUB -M 25GB
 #BSUB -W 48:00
 #BSUB -u sarste@dtu.dk
@@ -35,14 +35,13 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 # Run with safer memory settings
 python run_Unet_guided.py \
-  -n 1024 \
-  -b 64 \
+  -n 256 \
   -s 32 \
-  -W 128 \
+  -W 32 \
   -LR 0.0001 \
   -O Adam \
   -m "$DATA_DIR/MILK10k_Training_Metadata.csv" \
   -p "$DATA_DIR/MILK10k_Training_Input.pth" \
   -l skin_tone_class \
-  --device cpu \
+  --device cuda:0 \
   --generate
