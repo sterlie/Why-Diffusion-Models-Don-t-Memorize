@@ -4,7 +4,7 @@
 #BSUB -n 4
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=4GB]"
-#BSUB -M 25GB
+#BSUB -M 17GB
 #BSUB -W 48:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
