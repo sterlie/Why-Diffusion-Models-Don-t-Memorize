@@ -36,6 +36,10 @@ parser.add_argument('--num_classes', type=int, default=None,
 parser.add_argument('--class_label', type=int, default=None,
                     help='Class index to condition generation on (0-indexed). '
                          'Requires --num_classes. If omitted, generation is unconditional.')
+parser.add_argument('--available_only', action='store_true',
+                    help='Only use checkpoints that exist in the Models/ folder.')
+parser.add_argument('--checkpoints', type=int, nargs='+', default=None,
+                    help='Explicit list of checkpoint ids to generate from.')
 
 args = parser.parse_args()
 print(args)
@@ -97,7 +101,17 @@ batch_gen = 100
 Ns = Nsamples // batch_gen
 
 # Define the training times to sample models
-training_times = cfg.get_training_times()
+if args.checkpoints is not None:
+    training_times = sorted(args.checkpoints)
+elif args.available_only:
+    models_dir = config.path_save + type_model + '/Models/'
+    training_times = sorted([
+        int(f.split('_')[-1])
+        for f in os.listdir(models_dir)
+        if f.startswith('Model_')
+    ])
+else:
+    training_times = cfg.get_training_times()
 
 # Loop over training times
 for (j, checkpoint_id) in enumerate(training_times):
