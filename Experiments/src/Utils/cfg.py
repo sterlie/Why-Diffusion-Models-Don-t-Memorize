@@ -3,16 +3,20 @@ import calc
 import numpy as np
 import torch
 import loader
+import os
+
+
+_EXPERIMENTS_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 def load_config(DATASET):
     config = Diffusion.TrainingConfig()
     config.DATASET = DATASET             # Dataset name
     
     if DATASET == 'CelebA':
-        config.path_save = '../../Saves/'          # Path to save results from Experiments/src/FOLDER/
+        config.path_save = os.path.join(_EXPERIMENTS_ROOT, 'Saves') + os.sep
         config.IMG_SHAPE = (1, 32, 32)
         config.BATCH_SIZE = 512
-        config.path_data = '../../Data/CelebA/CelebA32.pt'  # Path to CelebA .pt file
+        config.path_data = os.path.join(_EXPERIMENTS_ROOT, 'Data', 'CelebA', 'CelebA32.pt')
         config.CENTER = True
         config.STANDARDIZE = False
         config.n_images = 1024
@@ -26,10 +30,10 @@ def load_config(DATASET):
         config.DEVICE = 'cuda:0'
         config.TIMESTEPS = 1000
     elif DATASET == "MILK10":
-        config.path_save = '../../Saves/'          # Path to save results from Experiments/src/FOLDER/
+        config.path_save = os.path.join(_EXPERIMENTS_ROOT, 'Saves') + os.sep
         config.IMG_SHAPE = (3, 32, 32)
         config.BATCH_SIZE = 512
-        config.path_data = '../../Data/milk10/MILK10.pth'    # Path to CelebA dataset from Experiments/src/FOLDER/
+        config.path_data = os.path.join(_EXPERIMENTS_ROOT, 'Data', 'milk10', 'MILK10.pth')
         config.CENTER = True
         config.STANDARDIZE = False
         config.n_images = 1024
