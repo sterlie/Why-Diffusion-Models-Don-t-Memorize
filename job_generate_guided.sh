@@ -1,6 +1,6 @@
 #!/bin/bash
 #BSUB -q hpc
-#BSUB -J gen_guided[0-5]
+#BSUB -J gen_guided
 #BSUB -n 1
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=4GB]"
@@ -9,8 +9,8 @@
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o gen_guided_%J_%I.out
-#BSUB -e gen_guided_%J_%I.err
+#BSUB -o gen_guided_0_.out
+#BSUB -e gen_guided_0_.err
 
 ### ===== JOB COMMANDS =====
 # Submits one job per class (LSF job array index = class label).
@@ -46,5 +46,5 @@ python generate.py \
   -Ns 100 \
   --device cpu \
   --num_classes 6 \
-  --class_label "$LSB_JOBINDEX" \
+  --class_label 0 \
   --available_only
