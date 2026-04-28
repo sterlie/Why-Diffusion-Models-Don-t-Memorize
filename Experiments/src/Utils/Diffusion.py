@@ -163,7 +163,7 @@ def sample_diffusion_from_noise(model, n_images=25, config=TrainingConfig(),
 
 @torch.no_grad()
 def sample_diffusion_from_noise_DDIM(model, n_images=25, config=TrainingConfig(), 
-                                df=DiffusionConfig(), dim=3, eta=0.0, ddim_steps=None):
+                                df=DiffusionConfig(), dim=3, eta=0.0, ddim_steps=None, y=None):
     """
     Generates images using the DDIM sampling procedure with a subsampled schedule.
     
@@ -211,7 +211,7 @@ def sample_diffusion_from_noise_DDIM(model, n_images=25, config=TrainingConfig()
         ts_prev = torch.full((n_images,), t_prev, dtype=torch.long, device=config.DEVICE)
 
         # Predict the noise at time t
-        eps_ts = model(x, ts)
+        eps_ts = model(x, ts, y)
 
         # Get scaling factors for current timestep t:
         sqrt_one_minus_alpha_cum_t = get(df.sqrt_one_minus_alpha_cumulative, ts, dim)

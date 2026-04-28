@@ -30,6 +30,12 @@ parser.add_argument('-Ns', '--Nsamples', type=int,
                     help='Number of samples to generate (should be multiple of 100).')
 parser.add_argument('--device', type=str,
                     help='Device used to load and apply the model.', default='cuda:0')
+parser.add_argument('--num_classes', type=int, default=None,
+                    help='Number of classes for guided model (e.g. if trained with run_Unet_guided.py). '
+                         'Leave unset for standard (unguided) models.')
+parser.add_argument('--class_label', type=int, default=None,
+                    help='Class index to condition generation on (0-indexed). '
+                         'Requires --num_classes. If omitted, generation is unconditional.')
 
 args = parser.parse_args()
 print(args)
@@ -47,6 +53,19 @@ index = int(args.index)
 
 if not Nsamples % 100 == 0:
     raise TypeError('Nsamples should be a multiple of 100.')
+
+# Build one-hot conditioning label (y) if class_label is specified
+y_cond = None
+if args.class_label is not None:
+    if args.num_classes is None:
+        raise ValueError('--class_label requires --num_classes to be set.')
+    if args.class_label < 0 or args.class_label >= args.num_classes:
+        raise ValueError('--class_label must be in [0, num_classes-1].')
+    import torch as _torch
+    one_hot = _torch.zeros(1, args.num_classes, device=config.DEVICE)
+    one_hot[0, args.class_label] = 1.0
+    # Expand to batch_gen (100) samples
+    y_cond = one_hot.expand(100, -1)  # [100, num_classes]
 
 # Load diffusion config for these data
 df = Diffusion.DiffusionConfig(
@@ -67,6 +86,7 @@ model_diffusion = Unet.UNet(
     base_channels_multiples = (1, 2, 4),
     apply_attention         = (False, True, True),
     dropout_rate            = 0.1,
+    num_classes             = args.num_classes,
 )
 model_diffusion.to(config.DEVICE)
 
@@ -105,7 +125,8 @@ for (j, checkpoint_id) in enumerate(training_times):
                                             df=df,
                                             dim=4,
                                             eta=0.0,            # Deterministic trajectories
-                                            ddim_steps=100)     # Number of steps reduced (much faster)
+                                            ddim_steps=100,     # Number of steps reduced (much faster)
+                                            y=y_cond)
         # Save initial samples
         path = path_save + str(config.TIMESTEPS)
         # Create dir if does not exist
