@@ -3,8 +3,8 @@
 #BSUB -J gen_guided[0-5]
 #BSUB -n 1
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=8GB]"
-#BSUB -M 10GB
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -M 5gB
 #BSUB -W 4:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
