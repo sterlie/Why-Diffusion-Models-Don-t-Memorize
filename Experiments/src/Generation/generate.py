@@ -56,7 +56,7 @@ df = Diffusion.DiffusionConfig(
 )
 
 # Load model on the device
-type_model = '{:s}{:d}_{:d}_{:d}_{:s}_{:d}_{:.4f}_index{:d}/'.format(config.DATASET, size,
+type_model = '{:s}{:d}_{:d}_{:d}_{:s}_{:d}_{:.4f}_index{:d}'.format(config.DATASET, size,
                                      config.n_images, n_base, config.OPTIM, config.BATCH_SIZE,
                                      config.LR, index)
 
@@ -85,7 +85,7 @@ for (j, checkpoint_id) in enumerate(training_times):
     
     # Load the model
     try:
-        model_suffix = '/Model_{:d}'.format(checkpoint_id)
+        model_suffix = 'Model_{:d}'.format(checkpoint_id)
         path_model_diffusion = config.path_save + type_model + '/Models/' + model_suffix
         model_diffusion = loader.load_model(model_diffusion, path_model_diffusion)
     except:
