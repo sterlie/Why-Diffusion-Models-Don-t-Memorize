@@ -113,7 +113,10 @@ for (j, checkpoint_id) in enumerate(training_times):
     
     # Loop for generation at the current checkpoint
     for i in range(0, Ns):
-        path_save = config.path_save + type_model + '/Samples/' + '{:d}/'.format(checkpoint_id)
+        if args.class_label is not None:
+            path_save = config.path_save + type_model + '/Samples/' + '{:d}/class_{:d}/'.format(checkpoint_id, args.class_label)
+        else:
+            path_save = config.path_save + type_model + '/Samples/' + '{:d}/'.format(checkpoint_id)
         doesExist = os.path.exists(path_save)
         if not doesExist:
             os.makedirs(path_save)
