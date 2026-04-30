@@ -163,7 +163,7 @@ def main():
     
     # Load configuration
     config = cfg.load_config(args.dataset)
-    config.IMG_SHAPE = (1, args.img_size, args.img_size)
+    config.IMG_SHAPE = (config.IMG_SHAPE[0], args.img_size, args.img_size)  # preserve channel count from dataset
     config.n_images = args.num
     config.BATCH_SIZE = min(args.batch_size, config.n_images)
     config.OPTIM = args.optim
