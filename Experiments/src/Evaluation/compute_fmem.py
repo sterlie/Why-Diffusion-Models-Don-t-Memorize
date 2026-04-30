@@ -93,7 +93,7 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
         knn_list = []
         
         for i in range(nsamples):
-            path_save = config.path_save + type_model + 'Samples/' + '/{:d}/'.format(tau)
+            path_save = config.path_save + type_model + 'Samples/' + '{:d}/'.format(tau)
             path = path_save + 'generated'
             file_a = path + '/samples_a_{:d}'.format(i)
             
