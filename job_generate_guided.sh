@@ -34,21 +34,17 @@ cd Experiments/src/Generation
 
 python -c "import torch; print(torch.cuda.is_available())"
 
-for N in 256 512 1024 2048; do
-  B=$(( N < 512 ? N : 512 ))
-  echo "===== Generating for n=$N class=0 ====="
-  python generate.py \
-    -D MILK10 \
-    -n $N \
-    -i 0 \
-    -s 32 \
-    -B $B \
-    -LR 0.0001 \
-    -O Adam \
-    -W 32 \
-    -Ns 100 \
-    --device cuda:0 \
-    --num_classes 6 \
-    --class_label 0 \
-    --available_only
-done
+python generate.py \
+  -D MILK10 \
+  -n 1024 \
+  -i 0 \
+  -s 32 \
+  -B 512 \
+  -LR 0.0001 \
+  -O Adam \
+  -W 32 \
+  -Ns 100 \
+  --device cuda:0 \
+  --num_classes 6 \
+  --class_label 0 \
+  --available_only
