@@ -76,11 +76,12 @@ def parse_arguments():
     parser.add_argument("--batch_sample_size", help="Size of each sample batch", type=int, default=100)
     parser.add_argument("--gap_threshold", help="Gap ratio threshold for collapsed samples", type=float, default=1/3)
     parser.add_argument("--device", help="Device to use (cuda:0, cpu)", type=str, default='cuda:0')
+    parser.add_argument("--num_classes", help="Number of classes (for class-conditional models)", type=int, default=None)
     
     return parser.parse_args()
 
 def compute_fraction_mem(training_times, train_images, type_model, config, file_fc,
-                             nsamples, sample_size, gap_threshold):
+                             nsamples, sample_size, gap_threshold, num_classes=None):
     """Compute fraction collapsed for all training times."""
     N = np.prod(config.IMG_SHAPE)
     X = train_images.reshape(-1, N).float()
@@ -92,24 +93,29 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
         distances_list = []
         knn_list = []
         
-        for i in range(nsamples):
-            path_save = config.path_save + type_model + 'Samples/' + '{:d}/'.format(tau)
-            path = path_save + 'generated'
-            file_a = path + '/samples_a_{:d}'.format(i)
-            
-            try:
-                images_a = torch.load(file_a)
-            except FileNotFoundError:
-                print(f"Warning: File not found: {file_a}")
-                continue
-            
-            # Compute distances to training set
-            s = images_a.reshape(-1, 1, N).to(config.DEVICE)
-            dist = torch.norm(s - X, dim=2, p=2)
-            knn = dist.topk(k, dim=1, largest=False)
-            
-            distances_list.append(knn[0].cpu())
-            knn_list.append(knn[1].cpu())
+        classes = range(num_classes) if num_classes is not None else [None]
+        for c in classes:
+            for i in range(nsamples):
+                base = config.path_save + type_model + 'Samples/' + '{:d}/'.format(tau)
+                if c is not None:
+                    path = base + 'class_{:d}/generated'.format(c)
+                else:
+                    path = base + 'generated'
+                file_a = path + '/samples_a_{:d}'.format(i)
+                
+                try:
+                    images_a = torch.load(file_a)
+                except FileNotFoundError:
+                    print(f"Warning: File not found: {file_a}")
+                    continue
+                
+                # Compute distances to training set
+                s = images_a.reshape(-1, 1, N).to(config.DEVICE)
+                dist = torch.norm(s - X, dim=2, p=2)
+                knn = dist.topk(k, dim=1, largest=False)
+                
+                distances_list.append(knn[0].cpu())
+                knn_list.append(knn[1].cpu())
         
         if not distances_list:
             continue
@@ -195,7 +201,8 @@ def main():
         file_fc=file_fc,
         nsamples=args.Nsamples,
         sample_size=args.batch_sample_size,
-        gap_threshold=args.gap_threshold
+        gap_threshold=args.gap_threshold,
+        num_classes=args.num_classes
     )
     
     print("Memorization fraction computation completed!")
