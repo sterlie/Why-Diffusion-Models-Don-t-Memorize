@@ -45,7 +45,7 @@ python run_Unet_guided.py \
   -LR 0.0001 \
   -O Adam \
   -m "$DATA_DIR/MILK10k_Training_Metadata.csv" \
-  -p "$DATA_DIR/MILK10k_Training_Input.pth" \
+  -p "$DATA_DIR/MILK10.pth" \
   -l skin_tone_class \
   --device cuda:0 \
   --generate
