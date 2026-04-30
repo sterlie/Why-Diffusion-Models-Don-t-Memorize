@@ -17,6 +17,7 @@ import warnings
 sys.path.insert(1, '../Utils/')      # In case we run from Experiments/Evaluation
 import Diffusion as dm
 import cfg
+from loader_milk import MILK10Dataset
 
 warnings.filterwarnings("ignore")
 
@@ -77,6 +78,8 @@ def parse_arguments():
     parser.add_argument("--gap_threshold", help="Gap ratio threshold for collapsed samples", type=float, default=1/3)
     parser.add_argument("--device", help="Device to use (cuda:0, cpu)", type=str, default='cuda:0')
     parser.add_argument("--num_classes", help="Number of classes (for class-conditional models)", type=int, default=None)
+    parser.add_argument("--image_pth", help="Path to .pth image file (MILK10). If set, overrides cfg path_data.", type=str, default=None)
+    parser.add_argument("--metadata_csv", help="Path to metadata CSV (MILK10).", type=str, default=None)
     
     return parser.parse_args()
 
@@ -191,8 +194,19 @@ def main():
     print(f"Output file: {file_fc}")
     
     # Load training data
-    train_images, _ = cfg.load_training_data(config, args.index)
-    train_images = train_images[:config.n_images, :, :, :].to(config.DEVICE)
+    if args.dataset == 'MILK10' and args.image_pth is not None:
+        # Load using MILK10Dataset to match training preprocessing exactly (no centering)
+        dataset = MILK10Dataset(
+            metadata_csv=args.metadata_csv,
+            image_pth=args.image_pth,
+            img_size=args.img_size,
+        )
+        all_images = torch.stack([dataset[i][0] for i in range(len(dataset))])
+        train_images = all_images[:config.n_images].to(config.DEVICE)
+    else:
+        config.CENTER = False  # Match training: no centering applied during MILK10 training
+        train_images, _ = cfg.load_training_data(config, args.index)
+        train_images = train_images[:config.n_images, :, :, :].to(config.DEVICE)
 
     # Setup diffusion configuration
     df = dm.DiffusionConfig(
