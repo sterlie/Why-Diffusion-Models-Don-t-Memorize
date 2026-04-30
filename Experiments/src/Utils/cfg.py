@@ -69,6 +69,8 @@ def load_training_data(config, index, loadtest=False):
     # Torch Tensor version
     size = config.IMG_SHAPE[1]
     all_images = torch.load(config.path_data)
+    if isinstance(all_images, dict):
+        all_images = torch.stack(list(all_images.values()))
     trainset, testset = loader.load_CelebA_pt(config, all_images, loadtest=loadtest, index=index)
     
     return trainset, testset
