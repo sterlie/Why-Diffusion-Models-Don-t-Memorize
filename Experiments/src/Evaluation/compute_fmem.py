@@ -195,16 +195,19 @@ def main():
     
     # Load training data
     if args.dataset == 'MILK10' and args.image_pth is not None:
-        # Load using MILK10Dataset to match training preprocessing exactly (no centering)
-        dataset = MILK10Dataset(
-            metadata_csv=args.metadata_csv,
-            image_pth=args.image_pth,
-            img_size=args.img_size,
-        )
-        all_images = torch.stack([dataset[i][0] for i in range(len(dataset))])
-        train_images = all_images[:config.n_images].to(config.DEVICE)
+        # Load directly from .pth file (no centering, matches training preprocessing)
+        raw = torch.load(args.image_pth, map_location='cpu')
+        if isinstance(raw, dict):
+            raw = torch.stack(list(raw.values()))  # {isic_id -> tensor} -> (N, C, H, W)
+        raw = raw.float()
+        if raw.shape[-1] != args.img_size:
+            import torch.nn.functional as F
+            raw = F.interpolate(raw, size=(args.img_size, args.img_size), mode='bilinear', align_corners=False)
+        # Use all images as reference (to avoid missing the actual training subset)
+        train_images = raw.to(config.DEVICE)
+        print(f"Loaded {len(train_images)} reference images from {args.image_pth}")
     else:
-        config.CENTER = False  # Match training: no centering applied during MILK10 training
+        config.CENTER = False
         train_images, _ = cfg.load_training_data(config, args.index)
         train_images = train_images[:config.n_images, :, :, :].to(config.DEVICE)
 
