@@ -89,8 +89,8 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
     for tau in pbar:
         # Load generated images and compute k-nearest neighbors
         k = min(2, len(train_images))
-        distances_tensor_all = torch.zeros(nsamples * sample_size, k)
-        knn_tensor_all = torch.zeros(nsamples * sample_size, k)
+        distances_list = []
+        knn_list = []
         
         for i in range(nsamples):
             path_save = config.path_save + type_model + 'Samples/' + '/{:d}/'.format(tau)
@@ -103,15 +103,18 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
                 print(f"Warning: File not found: {file_a}")
                 continue
             
-            i1, i2 = i * sample_size, (i + 1) * sample_size
-            
             # Compute distances to training set
             s = images_a.reshape(-1, 1, N).to(config.DEVICE)
             dist = torch.norm(s - X, dim=2, p=2)
             knn = dist.topk(k, dim=1, largest=False)
             
-            distances_tensor_all[i1:i2, :] = knn[0].cpu()
-            knn_tensor_all[i1:i2, :] = knn[1].cpu()
+            distances_list.append(knn[0].cpu())
+            knn_list.append(knn[1].cpu())
+        
+        if not distances_list:
+            continue
+        distances_tensor_all = torch.cat(distances_list, dim=0)
+        knn_tensor_all = torch.cat(knn_list, dim=0)
         
         # Compute gap ratios
         gap_ratio = distances_tensor_all[:, 0] / distances_tensor_all[:, 1]
@@ -175,7 +178,7 @@ def main():
     # Load training data
     train_images, _ = cfg.load_training_data(config, args.index)
     train_images = train_images[:config.n_images, :, :, :].to(config.DEVICE)
-    
+
     # Setup diffusion configuration
     df = dm.DiffusionConfig(
         n_steps=config.TIMESTEPS,
