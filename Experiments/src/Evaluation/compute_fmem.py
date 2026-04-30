@@ -203,9 +203,15 @@ def main():
         if raw.shape[-1] != args.img_size:
             import torch.nn.functional as F
             raw = F.interpolate(raw, size=(args.img_size, args.img_size), mode='bilinear', align_corners=False)
-        # Use all images as reference (to avoid missing the actual training subset)
-        train_images = raw.to(config.DEVICE)
-        print(f"Loaded {len(train_images)} reference images from {args.image_pth}")
+        # Use saved training indices if available (exact match to training set)
+        indices_path = config.path_save + type_model + 'training_indices.npy'
+        if os.path.exists(indices_path):
+            indices = np.load(indices_path)
+            train_images = raw[indices].to(config.DEVICE)
+            print(f"Loaded {len(train_images)} training images using saved indices from {indices_path}")
+        else:
+            train_images = raw[:config.n_images].to(config.DEVICE)
+            print(f"WARNING: No saved indices found at {indices_path}. Using first {len(train_images)} images — may not match training set.")
     else:
         config.CENTER = False
         train_images, _ = cfg.load_training_data(config, args.index)

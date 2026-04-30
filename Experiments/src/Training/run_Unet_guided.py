@@ -122,6 +122,8 @@ dataset = MILK10Dataset(
 if n < len(dataset):
     indices = np.random.choice(len(dataset), n, replace=False)
     dataset = torch.utils.data.Subset(dataset, indices)
+    # Save indices so fmem can compare against exactly these images
+    np.save(config.path_save + suffix + 'training_indices.npy', indices)
 
 trainloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 testloader = None

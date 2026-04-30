@@ -1,15 +1,16 @@
+#!/bin/bash
 #BSUB -q gpuv100
-#BSUB -J gen_guided_6
-#BSUB -n 1
+#BSUB -J gen_guided
+#BSUB -n 4
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=4GB]"
-#BSUB -M 5GB
-#BSUB -W 4:00
+#BSUB -R "rusage[mem=6GB]"
+#BSUB -M 7GB
+#BSUB -W 48:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o gen_guided_6_.out
-#BSUB -e gen_guided_6_.err
+#BSUB -o gen_guided_%J.out
+#BSUB -e gen_guided_%J.err
 
 ### ===== JOB COMMANDS =====
 # Submits one job per class (LSF job array index = class label).
@@ -33,19 +34,20 @@ cd Experiments/src/Generation
 
 python -c "import torch; print(torch.cuda.is_available())"
 
-for N in 512, 1024, 2048; do
-  echo "===== Running fmem for n=$N ====="
+for N in 256 512 1024 2048; do
+  B=$(( N < 512 ? N : 512 ))
+  echo "===== Generating for n=$N class=0 ====="
   python generate.py \
     -D MILK10 \
     -n $N \
     -i 0 \
     -s 32 \
-    -B 512 \
+    -B $B \
     -LR 0.0001 \
     -O Adam \
-    -W 128 \
+    -W 32 \
     -Ns 100 \
-    --device cpu \
+    --device cuda:0 \
     --num_classes 6 \
     --class_label 0 \
     --available_only
