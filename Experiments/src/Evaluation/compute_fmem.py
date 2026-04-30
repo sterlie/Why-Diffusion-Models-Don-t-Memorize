@@ -117,7 +117,7 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
                 file_a = path + '/samples_a_{:d}'.format(i)
 
                 try:
-                    images_a = torch.load(file_a)
+                    images_a = torch.load(file_a, map_location='cpu')
                 except FileNotFoundError:
                     print(f"Warning: File not found: {file_a}")
                     continue
