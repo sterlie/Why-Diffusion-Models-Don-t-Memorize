@@ -85,15 +85,25 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
     """Compute fraction collapsed for all training times."""
     N = np.prod(config.IMG_SHAPE)
     X = train_images.reshape(-1, N).float()
-    
+
+    classes = list(range(num_classes)) if num_classes is not None else [None]
+
+    # Open a per-class file for each class
+    class_files = {}
+    if num_classes is not None:
+        for c in classes:
+            path_class = os.path.dirname(file_fc) + f'/fraction_memorized_class{c}.txt'
+            if os.path.exists(path_class):
+                os.remove(path_class)
+            class_files[c] = path_class
+
     pbar = tqdm(training_times)
     for tau in pbar:
-        # Load generated images and compute k-nearest neighbors
         k = min(2, len(train_images))
-        distances_list = []
-        knn_list = []
-        
-        classes = range(num_classes) if num_classes is not None else [None]
+
+        # Per-class distances
+        class_distances = {c: [] for c in classes}
+
         for c in classes:
             for i in range(nsamples):
                 base = config.path_save + type_model + 'Samples/' + '{:d}/'.format(tau)
@@ -102,48 +112,47 @@ def compute_fraction_mem(training_times, train_images, type_model, config, file_
                 else:
                     path = base + 'generated'
                 file_a = path + '/samples_a_{:d}'.format(i)
-                
+
                 try:
                     images_a = torch.load(file_a)
                 except FileNotFoundError:
                     print(f"Warning: File not found: {file_a}")
                     continue
-                
-                # Compute distances to training set
+
                 s = images_a.reshape(-1, 1, N).to(config.DEVICE)
                 dist = torch.norm(s - X, dim=2, p=2)
                 knn = dist.topk(k, dim=1, largest=False)
-                
-                distances_list.append(knn[0].cpu())
-                knn_list.append(knn[1].cpu())
-        
-        if not distances_list:
-            continue
-        distances_tensor_all = torch.cat(distances_list, dim=0)
-        knn_tensor_all = torch.cat(knn_list, dim=0)
-        
-        # Compute gap ratios
-        gap_ratio = distances_tensor_all[:, 0] / distances_tensor_all[:, 1]
-        
-        # Compute fraction collapsed with bootstrap confidence intervals
-        collapsed_samples = np.where(gap_ratio < gap_threshold)[0]
-        fraction_mem = len(collapsed_samples) / len(gap_ratio)
-        
-        if len(collapsed_samples) > 0:
-            fraction_mem, std_frac, lower, upper = bootstrap_mean_se(
-                gap_ratio.numpy(), gap_threshold
-            )
-        else:
-            std_frac = 0.0
-            lower = 0.0
-            upper = 0.0
+                class_distances[c].append(knn[0].cpu())
 
-        pbar.set_description(f'Fmem = {fraction_mem*100:.2f}% ± {std_frac*100:.2f}')
+        desc_parts = []
+        for c in classes:
+            if not class_distances[c]:
+                continue
+            distances_tensor = torch.cat(class_distances[c], dim=0)
+            gap_ratio = distances_tensor[:, 0] / distances_tensor[:, 1]
 
-        # Write results to file
-        with open(file_fc, "a") as myfile:
-            myfile.write(f"\n{tau:d}\t{fraction_mem*100:.3f}\t{std_frac*100:.5f}\t"
-                        f"{lower*100:.5f}\t{upper*100:.5f}")
+            collapsed_samples = np.where(gap_ratio.numpy() < gap_threshold)[0]
+            fraction_mem = len(collapsed_samples) / len(gap_ratio)
+
+            if len(collapsed_samples) > 0:
+                fraction_mem, std_frac, lower, upper = bootstrap_mean_se(
+                    gap_ratio.numpy(), gap_threshold
+                )
+            else:
+                std_frac = 0.0
+                lower = 0.0
+                upper = 0.0
+
+            label = f'c{c}' if c is not None else 'all'
+            desc_parts.append(f'Fmem[{label}]={fraction_mem*100:.1f}%')
+
+            out_file = class_files[c] if c in class_files else file_fc
+            with open(out_file, "a") as myfile:
+                myfile.write(f"\n{tau:d}\t{fraction_mem*100:.3f}\t{std_frac*100:.5f}\t"
+                             f"{lower*100:.5f}\t{upper*100:.5f}")
+
+        if desc_parts:
+            pbar.set_description(' | '.join(desc_parts))
 
 
 def main():
