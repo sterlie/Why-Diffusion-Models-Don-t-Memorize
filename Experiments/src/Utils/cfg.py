@@ -33,7 +33,7 @@ def load_config(DATASET):
         config.path_save = os.path.join(_EXPERIMENTS_ROOT, 'Saves') + os.sep
         config.IMG_SHAPE = (3, 32, 32)
         config.BATCH_SIZE = 512
-        config.path_data = os.path.join(_EXPERIMENTS_ROOT, 'Data', 'milk10', 'MILK10.pth')
+        config.path_data = os.path.join(_EXPERIMENTS_ROOT, 'Data', 'MILK10.pth')
         config.CENTER = True
         config.STANDARDIZE = False
         config.n_images = 1024
