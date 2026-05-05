@@ -171,7 +171,12 @@ def main():
     config.BATCH_SIZE = min(args.batch_size, config.n_images)
     config.OPTIM = args.optim
     config.LR = args.learning_rate
-    config.DEVICE = args.device
+    _requested_device = args.device
+    if _requested_device.startswith('cuda') and not torch.cuda.is_available():
+        _fallback = 'mps' if torch.backends.mps.is_available() else 'cpu'
+        print(f'Warning: {_requested_device} not available, falling back to {_fallback}.')
+        _requested_device = _fallback
+    config.DEVICE = _requested_device
     
     # Model type string for paths
     type_model = '{:s}{:d}_{:d}_{:d}_{:s}_{:d}_{:.4f}_index{:d}/'.format(

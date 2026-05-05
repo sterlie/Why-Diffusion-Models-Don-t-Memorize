@@ -45,6 +45,10 @@ def parse_arguments():
     parser.add_argument("--N2", help="Ending batch index", type=int, default=100)
     parser.add_argument("--batch_size_samples", help="Size of each sample batch", type=int, default=100)
     parser.add_argument("--device", help="Device to use (cuda:0, cpu)", type=str, default='cuda:0')
+    parser.add_argument("--available_only", action='store_true',
+                        help='Only use checkpoints that exist in the Samples/ folder.')
+    parser.add_argument("--image_pth", type=str, default=None,
+                        help='Path to .pth file with training images (overrides config.path_data).')
     
     return parser.parse_args()
 
@@ -74,7 +78,7 @@ def compute_fid_for_checkpoint(tau, type_model, config, path_stats_testset,
             file_a = path + '/samples_a_{:d}'.format(i)
             
             # Load generated samples
-            images_a = torch.load(file_a)
+            images_a = torch.load(file_a, map_location='cpu')
             
             # Detransform data to original scale
             t = detransform_images(images_a, config)
@@ -84,9 +88,8 @@ def compute_fid_for_checkpoint(tau, type_model, config, path_stats_testset,
                 torchvision.utils.save_image(x, file_img_gen + '{:d}.png'.format(index_im + i*batch_size_samples))
         
         # Compute FID using pytorch_fid
-        args = '{:s} {:s} --device cuda:{:d}'.format(path_stats_testset,
-                                                     file_img_gen,
-                                                     int(config.DEVICE[-1]))
+        fid_device = config.DEVICE if config.DEVICE.startswith('cuda') and torch.cuda.is_available() else 'cpu'
+        args = '{:s} {:s} --device {:s}'.format(path_stats_testset, file_img_gen, fid_device)
         cmd = 'python -m pytorch_fid {:s}'.format(args)
         p = subprocess.check_output(cmd, shell=True, text=True)
         fid = float(p.split(' ')[2][0:-2])
@@ -110,6 +113,34 @@ def compute_fid_for_checkpoint(tau, type_model, config, path_stats_testset,
     return fid
 
 
+def ensure_ref_stats(path_stats, config, image_pth=None):
+    """Create reference FID statistics from training images if they don't exist."""
+    if os.path.exists(path_stats):
+        return
+    print(f"Reference stats not found at {path_stats}. Creating from training images...")
+    ref_img_dir = os.path.join(os.path.dirname(path_stats), 'ref_images_tmp')
+    os.makedirs(ref_img_dir, exist_ok=True)
+    try:
+        pth = image_pth if image_pth else config.path_data
+        raw = torch.load(pth, map_location='cpu')
+        if isinstance(raw, dict):
+            images = torch.stack(list(raw.values()))
+        else:
+            images = raw
+        images = images.float()
+        # Normalize to [0, 1] for PNG saving
+        images = (images - images.min()) / (images.max() - images.min() + 1e-8)
+        images = images.clamp(0, 1)
+        for idx, img in enumerate(tqdm(images, desc='Saving ref images')):
+            torchvision.utils.save_image(img, os.path.join(ref_img_dir, f'{idx}.png'))
+        fid_device = config.DEVICE if config.DEVICE.startswith('cuda') and torch.cuda.is_available() else 'cpu'
+        cmd = f'python -m pytorch_fid --save-stats {ref_img_dir} {path_stats} --device {fid_device}'
+        subprocess.check_call(cmd, shell=True)
+        print(f"Saved reference stats to {path_stats}")
+    finally:
+        shutil.rmtree(ref_img_dir, ignore_errors=True)
+
+
 def compute_fid_all_checkpoints(training_times, type_model, config, args):
     """Compute FID for all training checkpoints."""
     # Setup paths and files
@@ -119,7 +150,9 @@ def compute_fid_all_checkpoints(training_times, type_model, config, args):
     if os.path.exists(file_FID):     # Remove existing file
         os.remove(file_FID)
     os.makedirs(path_file, exist_ok=True)
-    
+    os.makedirs(os.path.dirname(path_stats_testset), exist_ok=True)
+    ensure_ref_stats(path_stats_testset, config, image_pth=getattr(args, 'image_pth', None))
+
     print(f"Computing FID for {len(training_times)} checkpoints...")
     print(f"Model: {type_model}")
     print(f"Reference statistics: {path_stats_testset}")
@@ -148,7 +181,8 @@ def main():
     
     # Load configuration
     config = cfg.load_config(args.dataset)
-    config.IMG_SHAPE = (1, args.img_size, args.img_size)
+    # Preserve dataset channel count; only override spatial dims
+    config.IMG_SHAPE = (config.IMG_SHAPE[0], args.img_size, args.img_size)
     config.n_images = args.num
     config.BATCH_SIZE = min(args.batch_size, config.n_images)
     config.OPTIM = args.optim
@@ -162,18 +196,26 @@ def main():
     )
     
     # Define training times to analyze
-    training_times = cfg.get_training_times()
-    
-    # Load training data (for consistency, though not used in FID computation)
-    train_images, _ = cfg.load_training_data(config, args.index)
-    train_images = train_images[:config.n_images, :, :, :].to(config.DEVICE)
-    
-    # Setup diffusion configuration
-    df = dm.DiffusionConfig(
-        n_steps=config.TIMESTEPS,
-        img_shape=config.IMG_SHAPE,
-        device=config.DEVICE,
-    )
+    if args.available_only:
+        samples_dir = os.path.join(config.path_save,
+            '{:s}{:d}_{:d}_{:d}_{:s}_{:d}_{:.4f}_index{:d}'.format(
+                config.DATASET, args.img_size, config.n_images, args.nbase,
+                config.OPTIM, config.BATCH_SIZE, config.LR, args.index),
+            'Samples')
+        training_times = sorted([
+            int(d) for d in os.listdir(samples_dir)
+            if os.path.isdir(os.path.join(samples_dir, d)) and d.isdigit()
+        ])
+    else:
+        training_times = cfg.get_training_times()
+
+    # Set mean/std on config so detransform_images works (needed if loader not called)
+    if args.image_pth:
+        config.path_data = args.image_pth
+    if not hasattr(config, 'mean'):
+        config.mean = torch.zeros(config.IMG_SHAPE[0])
+    if not hasattr(config, 'std'):
+        config.std = torch.ones(config.IMG_SHAPE[0])
     
     # Compute FID for all checkpoints
     compute_fid_all_checkpoints(

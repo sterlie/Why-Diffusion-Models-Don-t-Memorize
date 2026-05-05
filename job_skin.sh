@@ -1,17 +1,17 @@
 #!/bin/bash
 #BSUB -q  gpuv100
-#BSUB -J guided_skin
+#BSUB -J skin_all_samples
 #BSUB -n 4
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=6GB]"
-#BSUB -M 7GB
+#BSUB -R "rusage[mem=9GB]"
+#BSUB -M 10GB
 #BSUB -gpu "num=1:mode=exclusive_process"
-#BSUB -W 12:00
+#BSUB -W 48:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o skin_%J.out
-#BSUB -e skin_%J.err
+#BSUB -o skin_all_%J.out
+#BSUB -e skin_all_%J.err
 
 ### ===== JOB COMMANDS =====
 module purge
@@ -21,7 +21,7 @@ set -x
 set -e
 
 # Set dataset size to train — change before submitting
-N=256
+N= 10480
 
 cd "$LS_SUBCWD" || exit 1
 DATA_DIR="$LS_SUBCWD/Experiments/Data"
