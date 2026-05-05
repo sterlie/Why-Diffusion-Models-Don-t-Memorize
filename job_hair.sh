@@ -1,6 +1,6 @@
 #!/bin/bash
 #BSUB -q  gpuv100
-#BSUB -J skin_all_samples
+#BSUB -J hair_all_samples
 #BSUB -n 4
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=9GB]"
@@ -10,8 +10,8 @@
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
-#BSUB -o skin_all_%J.out
-#BSUB -e skin_all_%J.err
+#BSUB -o hair_all_%J.out
+#BSUB -e hair_all_%J.err
 
 ### ===== JOB COMMANDS =====
 module purge
@@ -46,6 +46,6 @@ python run_Unet_guided.py \
   -O Adam \
   -m "$DATA_DIR/MILK10k_Training_Metadata.csv" \
   -p "$DATA_DIR/MILK10.pth" \
-  -l skin_tone_class \
+  -l MONET_hair \
   --device cuda:0 \
   --generate
