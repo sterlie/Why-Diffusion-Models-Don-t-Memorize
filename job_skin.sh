@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=9GB]"
 #BSUB -M 10GB
 #BSUB -gpu "num=1:mode=exclusive_process"
-#BSUB -W 48:00
+#BSUB -W 12:00
 #BSUB -u sarste@dtu.dk
 #BSUB -B
 #BSUB -N
