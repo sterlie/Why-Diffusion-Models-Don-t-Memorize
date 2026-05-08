@@ -118,6 +118,7 @@ dataset = MILK10Dataset(
     label_col=label_col,
     img_size=size
 )
+print(f'Dataset loaded: {len(dataset)} images, label_col={label_col!r}, num_classes={dataset.num_classes}, classes={dataset.label_values}')
 # Optionally subsample for small dataset
 if n < len(dataset):
     indices = np.random.choice(len(dataset), n, replace=False)
