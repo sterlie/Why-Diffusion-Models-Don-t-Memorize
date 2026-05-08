@@ -172,8 +172,12 @@ if __name__ == '__main__':
         offset = 0
     if offset > 0:
         path_checkpoint = config.path_save + '/{:s}/Models/Model_{:d}'.format(suffix, offset)
-        model = loader.load_model(model, path_checkpoint)
-        model.to(config.DEVICE)
+        try:
+            model = loader.load_model(model, path_checkpoint)
+            model.to(config.DEVICE)
+        except RuntimeError as e:
+            print(f'Warning: could not load checkpoint (architecture mismatch?), starting from scratch.\n  {e}')
+            offset = 0
     if config.DEVICE.startswith('cuda') and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
     model.to(config.DEVICE)
@@ -204,7 +208,7 @@ if __name__ == '__main__':
     times_save = cfg.get_training_times()
 
     # --- Classifier-Free Guidance label dropping ---
-    cfg_drop_prob = 0.1  # Probability to drop label for unconditional training
+    # cfg_drop_prob = 0.0  # Probability to drop label for unconditional training
 
     print("Starting custom training loop with CFG and model saving")
     n_steps = offset
@@ -212,14 +216,15 @@ if __name__ == '__main__':
     bar = range(config.N_STEPS)
     from tqdm import tqdm
     bar = tqdm(bar, leave=True, position=0)
-    bar.update(offset)
+    if offset > 0:
+        bar.update(offset)
     while n_steps < config.N_STEPS:
         for batch_idx, (images, labels) in enumerate(trainloader):
             images = images.to(config.DEVICE)
             labels = labels.to(config.DEVICE)
             # Randomly drop labels for CFG
-            mask = (torch.rand(labels.shape[0], 1, device=labels.device) < cfg_drop_prob).float()
-            labels = labels * (1 - mask)
+            #mask = (torch.rand(labels.shape[0], 1, device=labels.device) < cfg_drop_prob).float()
+            #labels = labels * (1 - mask)
             # Sample random timesteps
             t = torch.randint(1, df.n_steps, (images.size(0),), device=images.device)
             # Apply forward diffusion to get noisy image and target noise
