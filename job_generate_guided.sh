@@ -36,14 +36,14 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 python generate.py \
   -D MILK10 \
-  -n 1024 \
+  -n 10480 \
   -i 0 \
   -s 32 \
   -B 512 \
   -LR 0.0001 \
   -O Adam \
   -W 32 \
-  -Ns 100 \
+  -Ns 200 \
   --device cuda:0 \
   --num_classes 6 \
   --class_label 0 \
