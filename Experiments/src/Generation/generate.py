@@ -46,7 +46,13 @@ print(args)
 DATASET = args.dataset
 config = cfg.load_config(DATASET)   # Load base config for this dataset
 n_base = int(args.nbase)
-config.DEVICE = args.device
+# Resolve device: fall back to mps or cpu if the requested CUDA device is unavailable
+_requested_device = args.device
+if _requested_device.startswith('cuda') and not torch.cuda.is_available():
+    _fallback = 'mps' if torch.backends.mps.is_available() else 'cpu'
+    print(f'Warning: {_requested_device} not available, falling back to {_fallback}.')
+    _requested_device = _fallback
+config.DEVICE = _requested_device
 config.n_images = int(args.num)
 Nsamples = int(args.Nsamples)
 size = int(args.img_size)
@@ -118,12 +124,9 @@ for (j, checkpoint_id) in enumerate(training_times):
     print(r'Training time = {:d} ({:d}/{:d})'.format(checkpoint_id, j, len(training_times)))
     
     # Load the model
-    try:
-        model_suffix = 'Model_{:d}'.format(checkpoint_id)
-        path_model_diffusion = config.path_save + type_model + '/Models/' + model_suffix
-        model_diffusion = loader.load_model(model_diffusion, path_model_diffusion)
-    except:
-        raise NameError('The checkpoint does not exist: {:s}'.format(path_model_diffusion))
+    model_suffix = 'Model_{:d}'.format(checkpoint_id)
+    path_model_diffusion = config.path_save + type_model + '/Models/' + model_suffix
+    model_diffusion = loader.load_model(model_diffusion, path_model_diffusion)
     
     # Loop for generation at the current checkpoint
     for i in range(0, Ns):
